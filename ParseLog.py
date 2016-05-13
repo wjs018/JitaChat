@@ -23,25 +23,29 @@ if __name__ == '__main__':
     # Read the first line (unused)
 
     header_line = f.readline()
-    
+
     # Create our database table
-    
+
     c.execute("CREATE TABLE ChatLog(" +
-          "messageTime, " +
-          "author TEXT, " +
-          "message TEXT, " +
-          "messageClean TEXT, " +
-          "authorNonAlpha INTEGER, " +
-          "authorCapitals INTEGER, " +
-          "messageNonAlpha INTEGER, " +
-          "messageNonAlNum INTEGER, " +
-          "messageNumbers INTEGER, " +
-          "messageLength INTEGER);")
+              "messageTime TIMESTAMP, " +
+              "author TEXT, " +
+              "message TEXT, " +
+              "messageClean TEXT, " +
+              "authorLength INTEGER, " +
+              "authorNonAlpha INTEGER, " +
+              "authorNonAlNum INTEGER, " +
+              "authorCapitals INTEGER, " +
+              "authorNumbers INTEGER, " +
+              "messageNonAlpha INTEGER, " +
+              "messageNonAlNum INTEGER, " +
+              "messageNumbers INTEGER, " +
+              "messageLength INTEGER, " +
+              "messageCapitals INTEGER);")
 
     # Iterate through the file
 
     for line in f:
-        
+
         if line[0] != '2':
             continue
 
@@ -55,7 +59,7 @@ if __name__ == '__main__':
 
         # Extract author of the message as well as message contents, stripping
         # the newline characters at the end
-        
+
         try:
             [author, message] = line[20:].strip().split('\t')
         except:
@@ -65,43 +69,64 @@ if __name__ == '__main__':
 
         author_nonalpha = 0
         author_capitals = 0
+        author_numbers = 0
         message_capitals = 0
         message_nonalpha = 0
         message_nonalnum = 0
         message_numbers = 0
-        
+
         # Length of message
-        
+
         message_length = len(message)
 
-        # Check for non-alphabet, non-whitespace characters in an author's name
+        # Get length of author's name
+
+        author_length = len(author)
+
+        # Take away all the non-alphanumeric characters
+
+        author_sub = re.sub("[^a-zA-Z0-9 ]", '', author)
+
+        # Find the difference in lengths to get the number of non-alphanumeric
+        # characters
+
+        author_nonalnum = author_length - len(author_sub)
+
+        # Do the same thing with no numbers to find the number of digits 0-9
+
+        author_sub = re.sub("[^a-zA-Z ]", '', author)
+        author_nonalpha = author_length - len(author_sub)
+
+        # Find the number of numbers in the author name
+        
+        author_numbers = len(re.sub("[^0-9]",'',author))
+        #author_numbers = author_nonalpha - author_nonalnum
 
         for i in range(len(author)):
-            if not author[i].isalpha() or not author[i] == ' ':
-                author_nonalpha += 1
-            
-            # Check for number of capital letters
-            
+
+            # Count the number of capital letters in the author name
+
             if author[i].isupper():
                 author_capitals += 1
 
         # Check for non-alphabet, non-whitespace characters in message contents
 
+        # Take away all the non-alphanumeric characters from the message
+
+        message_temp = re.sub("[^a-zA-Z0-9 ]", '', message)
+        message_nonalnum = message_length - len(message_temp)
+
+        message_temp = re.sub("[^a-zA-Z ]", '', message)
+        message_nonalpha = message_length - len(message_temp)
+
         for i in range(len(message)):
-            if not message[i].isalpha() or not message[i] == ' ':
-                message_nonalpha += 1
 
-            # Check if it is instead numeric as well
-
-            if not message[i].isalnum() or not message[i] == ' ':
-                message_nonalnum += 1
-            
             # Check for number of capital letters
-            
+
             if message[i].isupper():
                 message_capitals += 1
 
-        message_numbers = message_nonalpha - message_nonalnum
+        message_numbers = len(re.sub("[^0-9]", '', message))
 
         # Use regular expressions to replace text within brackets, [], as just
         # ContractLink
@@ -116,53 +141,65 @@ if __name__ == '__main__':
         # Use regular expressions to replace (Auction) as just ContractLink
 
         message_sub = re.sub("\(Auction\)", 'ContractLink', message_sub)
+        
+        # Use regular expressions to replace (Courier) as just ContractLink
+        
+        message_sub = re.sub("\(Courier\)", 'ContractLink', message_sub)
 
         # Use regular expressions to replace detected urls with urlLink
         # This snippet of code from https://gist.github.com/uogbuji/705383
 
         url_pattern = re.compile(
             ur'(?i)\b((?:https?://|www\d{0,3}[.]|[a-z0-9.\-]+[.][a-z]{2,4}/)(?:[^\s()<>]+|\(([^\s()<>]+|(\([^\s()<>]+\)))*\))+(?:\(([^\s()<>]+|(\([^\s()<>]+\)))*\)|[^\s`!()\[\]{};:\'".,<>?\xab\xbb\u201c\u201d\u2018\u2019]))')
-        
+
         message_sub = re.sub(url_pattern, 'urlLink', message_sub)
-        
-        # Now, let's just get rid of all non-alphanumeric characters left in the message
-        
+
+        # Now, let's just get rid of all non-alphanumeric characters left in
+        # the message
+
         message_sub = re.sub("[^a-zA-Z0-9 ]", '', message_sub)
-        
+
         # Compress excess whitespace in message_sub
-        
+
         message_sub = re.sub("\s+", ' ', message_sub).strip()
-        
+
         # Write our results to the sqlite database
-        
+
         c.execute("INSERT INTO ChatLog (" +
-                  "messageTime, " + 
+                  "messageTime, " +
                   "author, " +
                   "message, " +
                   "messageClean, " +
+                  "authorLength, " +
                   "authorNonAlpha, " +
+                  "authorNonAlNum, " +
                   "authorCapitals, " +
+                  "authorNumbers, " +
                   "messageNonAlpha, " +
                   "messageNonAlNum, " +
                   "messageNumbers, " +
-                  "messageLength) " +
-                  "VALUES (?,?,?,?,?,?,?,?,?,?)", (message_time,
-                                                   author,
-                                                   message,
-                                                   message_sub,
-                                                   author_nonalpha,
-                                                   author_capitals,
-                                                   message_nonalpha,
-                                                   message_nonalnum,
-                                                   message_numbers,
-                                                   message_length))
-    
+                  "messageLength, "
+                  "messageCapitals) " +
+                  "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)", (message_time,
+                                                           author,
+                                                           message,
+                                                           message_sub,
+                                                           author_length,
+                                                           author_nonalpha,
+                                                           author_nonalnum,
+                                                           author_capitals,
+                                                           author_numbers,
+                                                           message_nonalpha,
+                                                           message_nonalnum,
+                                                           message_numbers,
+                                                           message_length,
+                                                           message_capitals))
+
     # Write our changes to the sqlite file
-    
+
     conn.commit()
-    
+
     # Finish up by closing our files
-    
+
     f.close()
     conn.close()
-        
