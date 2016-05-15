@@ -7,12 +7,15 @@ import datetime as dt
 import sqlite3
 import re
 
-if __name__ == '__main__':
-
+def parse_logfile(logfile_path, sqlite_path):
+    """Parses a jita chat log file given by the logfile_path and
+    dumps it into a sqlite database saved at sqlite_path. The
+    database does not need to exist prior to execution."""
+    
     # Filepaths
 
-    log_path = '/media/sf_G_DRIVE/jita1407/jita.log'
-    db_path = '/media/sf_G_DRIVE/jita1407/jita.sqlite'
+    log_path = logfile_path
+    db_path = sqlite_path
 
     # Open and/or create files
 
@@ -241,3 +244,18 @@ if __name__ == '__main__':
 
     f.close()
     conn.close()
+    
+    # Return the number of wrongly formatted lines (optional, but useful for debugging)
+    
+    return bad_lines
+
+if __name__ == '__main__':
+
+    # Filepaths
+
+    log_path = '/media/sf_G_DRIVE/jita1407/jita.log'
+    db_path = '/media/sf_G_DRIVE/jita1407/jita.sqlite'
+
+    # Call our parsing function
+    
+    parsed = parse_logfile(log_path, db_path)
