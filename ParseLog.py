@@ -23,6 +23,17 @@ if __name__ == '__main__':
     # Read the first line (unused)
 
     header_line = f.readline()
+    
+    # Check to see if the table already exists
+
+    c.execute(
+        "SELECT * FROM sqlite_master WHERE name = 'ChatLog' and type = 'table';")
+    tableExists = c.fetchall()
+    
+    # Drop the existing table if it exists
+    
+    if tableExists:
+        c.execute("DROP TABLE ChatLog")
 
     # Create our database table
 
@@ -41,12 +52,17 @@ if __name__ == '__main__':
               "messageNumbers INTEGER, " +
               "messageLength INTEGER, " +
               "messageCapitals INTEGER);")
+    
+    bad_lines = 0
 
     # Iterate through the file
 
     for line in f:
+        
+        # If the line doesn't start with the timestamp, just skip to the next
 
         if line[0] != '2':
+            bad_lines += 1
             continue
 
         # Extract the timestamp string of the message
@@ -59,21 +75,15 @@ if __name__ == '__main__':
 
         # Extract author of the message as well as message contents, stripping
         # the newline characters at the end
+        #
+        # There are some lines that don't unpack successfully, thus the try
+        # block. In total though, this number is very very small, ~0.003%
 
         try:
             [author, message] = line[20:].strip().split('\t')
         except:
+            bad_lines += 1
             continue
-
-        # Some iterative variables to initiate before subsequent loops
-
-        author_nonalpha = 0
-        author_capitals = 0
-        author_numbers = 0
-        message_capitals = 0
-        message_nonalpha = 0
-        message_nonalnum = 0
-        message_numbers = 0
 
         # Length of message
 
@@ -100,14 +110,10 @@ if __name__ == '__main__':
         # Find the number of numbers in the author name
         
         author_numbers = len(re.sub("[^0-9]",'',author))
-        #author_numbers = author_nonalpha - author_nonalnum
-
-        for i in range(len(author)):
-
-            # Count the number of capital letters in the author name
-
-            if author[i].isupper():
-                author_capitals += 1
+        
+        # Count the number of capitals
+        
+        author_capitals = len(re.sub("[A-Z", '', author))
 
         # Check for non-alphabet, non-whitespace characters in message contents
 
@@ -119,12 +125,11 @@ if __name__ == '__main__':
         message_temp = re.sub("[^a-zA-Z ]", '', message)
         message_nonalpha = message_length - len(message_temp)
 
-        for i in range(len(message)):
-
-            # Check for number of capital letters
-
-            if message[i].isupper():
-                message_capitals += 1
+        # Count the number of capitals
+        
+        message_capitals = len(re.sub("[^A-Z]", '', message))
+        
+        # Count the number of numbers
 
         message_numbers = len(re.sub("[^0-9]", '', message))
 
