@@ -129,7 +129,7 @@ def parse_logfile(logfile_path, sqlite_path):
 
         # Count the number of capitals
 
-        author_capitals = len(re.sub("[A-Z]", '', author))
+        author_capitals = len(re.sub("[^A-Z]", '', author))
 
         # Check for non-alphabet, non-whitespace characters in message contents
 
