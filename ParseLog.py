@@ -7,6 +7,8 @@ import datetime as dt
 import sqlite3
 import re
 
+from nltk.stem import SnowballStemmer
+
 def parse_logfile(logfile_path, sqlite_path):
     """Parses a jita chat log file given by the logfile_path and
     dumps it into a sqlite database saved at sqlite_path. The
@@ -64,6 +66,10 @@ def parse_logfile(logfile_path, sqlite_path):
     # Initialize a dictionary to keep track of message intervals
 
     last_message = {}
+    
+    # Initialize our Snowball stemmer
+    
+    stemmer = SnowballStemmer("english")
 
     # Iterate through the file
 
@@ -177,6 +183,16 @@ def parse_logfile(logfile_path, sqlite_path):
         # Compress excess whitespace in message_sub
 
         message_sub = re.sub("\s+", ' ', message_sub).strip()
+        
+        # Now, let's stem the message with nltk
+        
+        message_list = message_sub.split(' ')
+        message_stemmed_list = []
+        
+        for word in message_list:
+            message_stemmed_list.append(stemmer.stem(word))
+        
+        message_sub_stemmed = " ".join(message_stemmed_list)
 
         # Find the interval between this message and the previous one by the
         # same author if it exists
@@ -223,7 +239,7 @@ def parse_logfile(logfile_path, sqlite_path):
                   "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", (message_time,
                                                              author,
                                                              message,
-                                                             message_sub,
+                                                             message_sub_stemmed,
                                                              author_length,
                                                              author_nonalpha,
                                                              author_nonalnum,
@@ -253,8 +269,8 @@ if __name__ == '__main__':
 
     # Filepaths
 
-    log_path = '/media/sf_G_DRIVE/jita1407/jita.log'
-    db_path = '/media/sf_G_DRIVE/jita1407/jita.sqlite'
+    log_path = '/media/sf_M_DRIVE/jita.log'
+    db_path = '/media/sf_M_DRIVE/jita.sqlite'
 
     # Call our parsing function
     
