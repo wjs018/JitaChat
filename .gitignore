@@ -2,6 +2,7 @@
 *.sqlite
 *.pyc
 *.tif
+*Testing.py
 
 *.pydevproject
 .metadata
