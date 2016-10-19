@@ -269,8 +269,8 @@ if __name__ == '__main__':
 
     # Filepaths
 
-    log_path = '/media/sf_M_DRIVE/jita.log'
-    db_path = '/media/sf_M_DRIVE/jita.sqlite'
+    log_path = '/media/sf_G_DRIVE/jita1407/jita.log'
+    db_path = '/media/sf_G_DRIVE/jita1407/jita.sqlite'
 
     # Call our parsing function
     
